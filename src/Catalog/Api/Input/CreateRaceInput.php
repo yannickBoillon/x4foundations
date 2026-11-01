@@ -8,7 +8,7 @@ use App\Catalog\Entity\CatalogCode;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * POST /api/races
+ * POST /api/races.
  */
 final class CreateRaceInput
 {

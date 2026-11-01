@@ -27,8 +27,8 @@ api_platform:
         paths:
             - '%kernel.project_dir%/src/ApiResource'
             - '%kernel.project_dir%/src/Entity'
-            - '%kernel.project_dir%/src/User/Api/Resource'
-            - '%kernel.project_dir%/src/Catalog/Api/Resource'
+            - '%kernel.project_dir%/src/User/Entity'
+            - '%kernel.project_dir%/src/Catalog/Entity'
 
     exception_to_status:
         App\User\Exception\UserNotFound: 404

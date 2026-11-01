@@ -34,15 +34,15 @@ final readonly class CreateAdminCommand
         #[Argument('Email de l\'administrateur')] string $email,
         #[Option('Mot de passe (demandé de façon masquée si absent)')] ?string $password = null,
     ): int {
-        $password ??= $io->askHidden('Mot de passe', static function (?string $value): string {
-            if (mb_strlen((string) $value) < self::PASSWORD_MIN_LENGTH) {
+        $password ??= $io->askHidden('Mot de passe', static function (mixed $value): string {
+            if (!\is_string($value) || mb_strlen($value) < self::PASSWORD_MIN_LENGTH) {
                 throw new \RuntimeException(\sprintf('Le mot de passe doit faire au moins %d caractères.', self::PASSWORD_MIN_LENGTH));
             }
 
-            return (string) $value;
+            return $value;
         });
 
-        if (null === $password || mb_strlen($password) < self::PASSWORD_MIN_LENGTH) {
+        if (!\is_string($password) || mb_strlen($password) < self::PASSWORD_MIN_LENGTH) {
             $io->error(\sprintf('Le mot de passe doit faire au moins %d caractères (option --password en mode non interactif).', self::PASSWORD_MIN_LENGTH));
 
             return Command::INVALID;
