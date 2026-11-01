@@ -4,23 +4,74 @@ declare(strict_types=1);
 
 namespace App\User\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\User\Api\Input\AssignRoleInput;
+use App\User\Api\Input\RegisterUserInput;
+use App\User\Api\State\AssignRoleProcessor;
+use App\User\Api\State\RegisterUserProcessor;
+use App\User\Api\State\RevokeRoleProcessor;
 use App\User\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Uid\Uuid;
 
+/**
+ * Exposé directement par l'API : seuls id, email et rôles (groupe user:read) sont sérialisés,
+ * jamais le hash du mot de passe. L'écriture passe par des DTO d'entrée et des processors.
+ */
+#[ApiResource(
+    operations: [
+        new GetCollection(security: "is_granted('ROLE_ADMIN')"),
+        new Get(security: "is_granted('ROLE_ADMIN') or object.getUserIdentifier() == user.getUserIdentifier()"),
+        new Post(
+            input: RegisterUserInput::class,
+            processor: RegisterUserProcessor::class,
+            openapi: new OpenApiOperation(security: []), // inscription publique
+        ),
+        // Affectation d'un rôle : POST /api/users/{id}/roles {"role": "ROLE_PILOT"}
+        new Post(
+            uriTemplate: '/users/{id}/roles',
+            uriVariables: ['id'],
+            status: 200,
+            security: "is_granted('ROLE_ADMIN')",
+            input: AssignRoleInput::class,
+            read: false,
+            processor: AssignRoleProcessor::class,
+            name: 'user_assign_role',
+        ),
+        // Retrait d'un rôle : DELETE /api/users/{id}/roles/ROLE_PILOT
+        new Delete(
+            uriTemplate: '/users/{id}/roles/{role}',
+            uriVariables: ['id', 'role'],
+            security: "is_granted('ROLE_ADMIN')",
+            read: false,
+            processor: RevokeRoleProcessor::class,
+            name: 'user_revoke_role',
+        ),
+    ],
+    normalizationContext: ['groups' => ['user:read']],
+    order: ['email' => 'ASC'],
+)]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME)]
+    #[Groups(['user:read'])]
     private Uuid $id;
 
     #[ORM\Column(length: 180, unique: true)]
+    #[Groups(['user:read'])]
     private string $email;
 
     /** @var list<string> rôles attribués explicitement (ROLE_USER est implicite) */
@@ -95,12 +146,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getUserIdentifier(): string
     {
+        \assert('' !== $this->email); // garanti par changeEmail()
+
         return $this->email;
     }
 
     /**
      * @return list<string> rôles effectifs, ROLE_USER inclus
      */
+    #[Groups(['user:read'])]
     public function getRoles(): array
     {
         return [Role::User->value, ...$this->roles];

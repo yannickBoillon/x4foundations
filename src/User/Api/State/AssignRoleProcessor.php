@@ -6,13 +6,14 @@ namespace App\User\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use App\Api\UriVariable;
 use App\User\Api\Input\AssignRoleInput;
-use App\User\Api\Resource\UserResource;
 use App\User\Entity\Role;
+use App\User\Entity\User;
 use App\User\Repository\UserRepository;
 
 /**
- * @implements ProcessorInterface<AssignRoleInput, UserResource>
+ * @implements ProcessorInterface<AssignRoleInput, User>
  */
 final readonly class AssignRoleProcessor implements ProcessorInterface
 {
@@ -20,14 +21,12 @@ final readonly class AssignRoleProcessor implements ProcessorInterface
     {
     }
 
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): UserResource
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): User
     {
-        \assert($data instanceof AssignRoleInput);
-
-        $user = $this->users->get((string) $uriVariables['id']);
+        $user = $this->users->get(UriVariable::string($uriVariables, 'id'));
         $user->assignRole(Role::from($data->role));
         $this->users->save($user);
 
-        return UserResource::fromEntity($user);
+        return $user;
     }
 }
