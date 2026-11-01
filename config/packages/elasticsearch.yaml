@@ -1,0 +1,8 @@
+parameters:
+    env(ELASTICSEARCH_URL): 'http://elasticsearch:9200'
+
+services:
+    Elastic\Elasticsearch\Client:
+        factory: ['Elastic\Elasticsearch\ClientBuilder', 'fromConfig']
+        arguments:
+            - { hosts: ['%env(ELASTICSEARCH_URL)%'] }

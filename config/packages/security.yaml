@@ -1,0 +1,52 @@
+security:
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    providers:
+        # Chargement par UserRepository::loadUserByIdentifier (email insensible à la casse)
+        app_user_provider:
+            entity:
+                class: App\User\Entity\User
+
+    # ROLE_ADMIN > ROLE_FLEET_COMMANDER > ROLE_PILOT > ROLE_USER
+    role_hierarchy:
+        ROLE_PILOT: ROLE_USER
+        ROLE_FLEET_COMMANDER: ROLE_PILOT
+        ROLE_ADMIN: ROLE_FLEET_COMMANDER
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        # POST /api/auth {"email": "...", "password": "..."} → {"token": "<JWT>"}
+        login:
+            pattern: ^/api/auth$
+            stateless: true
+            provider: app_user_provider
+            json_login:
+                check_path: /api/auth
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+        # Toutes les autres routes /api : header "Authorization: Bearer <JWT>"
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            jwt: ~
+
+    access_control:
+        - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/users$, methods: [POST], roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+
+when@test:
+    security:
+        password_hashers:
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10

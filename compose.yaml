@@ -1,0 +1,144 @@
+name: fleetapi
+
+x-app-env: &app-env
+  APP_ENV: ${APP_ENV:-dev}
+  DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app}@database:5432/${POSTGRES_DB:-fleet_api}?serverVersion=17&charset=utf8
+  MESSENGER_TRANSPORT_DSN: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/%2f/messages
+  ELASTICSEARCH_URL: http://elasticsearch:9200
+
+services:
+  php:
+    build:
+      context: ./docker/php
+      args:
+        SYMFONY_VERSION: ${SYMFONY_VERSION:-7.4.*}
+    # Tourne avec ton UID/GID : les fichiers générés t'appartiennent sur l'hôte
+    user: "${UID:-1000}:${GID:-1000}"
+    environment: *app-env
+    volumes:
+      - ./:/app
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep php-fpm > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 600s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./:/app:ro
+    depends_on:
+      php:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./docker/node
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      # URL de l'API vue depuis le navigateur (accessible via import.meta.env.VITE_API_URL)
+      VITE_API_URL: http://localhost:${HTTP_PORT:-8080}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./frontend:/app
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./docker/php
+      args:
+        SYMFONY_VERSION: ${SYMFONY_VERSION:-7.4.*}
+    user: "${UID:-1000}:${GID:-1000}"
+    command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "-vv"]
+    environment: *app-env
+    volumes:
+      - ./:/app
+    depends_on:
+      php:
+        condition: service_healthy
+    restart: unless-stopped
+
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fleet_api}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      # CORS : Elasticvue interroge Elasticsearch directement depuis le navigateur
+      http.cors.enabled: "true"
+      http.cors.allow-origin: /https?:\/\/(localhost|127\.0\.0\.1)(:[0-9]+)?/
+      http.cors.allow-headers: X-Requested-With,Content-Type,Content-Length,Authorization
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+    restart: unless-stopped
+
+  elasticvue:
+    image: cars10/elasticvue:latest
+    environment:
+      ELASTICVUE_CLUSTERS: '[{"name": "fleetapi", "uri": "http://localhost:${ELASTICSEARCH_PORT:-9200}"}]'
+    ports:
+      - "${ELASTICVUE_PORT:-8081}:8080"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  database_data:
+  elasticsearch_data:
+  rabbitmq_data:

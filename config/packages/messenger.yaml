@@ -1,0 +1,16 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            # RabbitMQ (voir MESSENGER_TRANSPORT_DSN dans compose.yaml)
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    multiplier: 2
+            failed: 'doctrine://default?queue_name=failed'
+            sync: 'sync://'
+
+        # routing:
+        #     'App\Message\YourMessage': async

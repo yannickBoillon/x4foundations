@@ -1,0 +1,36 @@
+api_platform:
+    title: Fleet API
+    description: |
+        API de gestion de flottes de vaisseaux.
+
+        Authentification JWT : récupère un token via `POST /api/auth` (email / mot de passe),
+        puis clique sur **Authorize** et colle-le.
+        Création de compte publique via `POST /api/users`.
+    version: 1.0.0
+    # Format choisi via le header Accept / Content-Type (ou l'extension : /api/users.json)
+    formats:
+        jsonld: ['application/ld+json']
+        json: ['application/json']
+    defaults:
+        stateless: true
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']
+
+    swagger:
+        persist_authorization: true
+        http_auth:
+            JWT:
+                scheme: bearer
+                bearerFormat: JWT
+
+    mapping:
+        paths:
+            - '%kernel.project_dir%/src/ApiResource'
+            - '%kernel.project_dir%/src/Entity'
+            - '%kernel.project_dir%/src/User/Api/Resource'
+
+    exception_to_status:
+        App\User\Exception\UserNotFound: 404
+        App\User\Exception\EmailAlreadyUsed: 409
+        DomainException: 422
+        InvalidArgumentException: 400
