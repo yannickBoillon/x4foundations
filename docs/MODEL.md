@@ -263,8 +263,11 @@ Règles reprises de `User` :
   `changePrice()`…) qui protègent les règles du domaine, plutôt que des setters.
 - **Cas d'usage dans `Service/`** quand ils sont partagés ou portent une règle
   qui dépasse une entité (ex. : fermer le prix courant et ouvrir le nouveau).
-- **Écriture via Processors**, qui reçoivent un DTO `Input` et appellent le
-  service ou l'entité.
+- **Écriture via un Processor par ressource** (ex. `RaceProcessor`), qui
+  aiguille selon l'opération (`Post`, `Patch`, `Delete`…), reçoit le DTO `Input`
+  et appelle le service. Différence assumée avec `User`, qui a un processor par
+  opération. Pas de processor générique : chaque opération appelle une méthode
+  métier précise.
 - **Exceptions métier** déclarées dans `exception_to_status` d'API Platform
   (404, 409…).
 - **Sécurité dans les opérations** `#[ApiResource]`, mais avec des permissions

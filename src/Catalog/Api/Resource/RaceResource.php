@@ -13,10 +13,8 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Catalog\Api\Input\CreateRaceInput;
 use App\Catalog\Api\Input\RenameRaceInput;
-use App\Catalog\Api\State\CreateRaceProcessor;
-use App\Catalog\Api\State\DeleteRaceProcessor;
+use App\Catalog\Api\State\RaceProcessor;
 use App\Catalog\Api\State\RaceProvider;
-use App\Catalog\Api\State\RenameRaceProcessor;
 use App\Catalog\Entity\Race;
 
 #[ApiResource(
@@ -24,7 +22,7 @@ use App\Catalog\Entity\Race;
     uriTemplate: '/races',
     operations: [
         new GetCollection(security: "is_granted('ROLE_PERMISSION_RACE_READ')", provider: RaceProvider::class),
-        new Post(security: "is_granted('ROLE_PERMISSION_RACE_WRITE')", input: CreateRaceInput::class, processor: CreateRaceProcessor::class),
+        new Post(security: "is_granted('ROLE_PERMISSION_RACE_WRITE')", input: CreateRaceInput::class, processor: RaceProcessor::class),
     ],
 )]
 #[ApiResource(
@@ -34,8 +32,8 @@ use App\Catalog\Entity\Race;
     operations: [
         new Get(security: "is_granted('ROLE_PERMISSION_RACE_READ')", provider: RaceProvider::class),
         // Seul le nom est modifiable : PATCH (Content-Type: application/merge-patch+json) {"name": "..."}
-        new Patch(security: "is_granted('ROLE_PERMISSION_RACE_WRITE')", input: RenameRaceInput::class, read: false, processor: RenameRaceProcessor::class),
-        new Delete(security: "is_granted('ROLE_PERMISSION_RACE_WRITE')", read: false, processor: DeleteRaceProcessor::class),
+        new Patch(security: "is_granted('ROLE_PERMISSION_RACE_WRITE')", input: RenameRaceInput::class, read: false, processor: RaceProcessor::class),
+        new Delete(security: "is_granted('ROLE_PERMISSION_RACE_WRITE')", read: false, processor: RaceProcessor::class),
     ],
 )]
 final class RaceResource
