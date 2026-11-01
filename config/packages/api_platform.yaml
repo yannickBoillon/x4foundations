@@ -28,9 +28,12 @@ api_platform:
             - '%kernel.project_dir%/src/ApiResource'
             - '%kernel.project_dir%/src/Entity'
             - '%kernel.project_dir%/src/User/Api/Resource'
+            - '%kernel.project_dir%/src/Catalog/Api/Resource'
 
     exception_to_status:
         App\User\Exception\UserNotFound: 404
         App\User\Exception\EmailAlreadyUsed: 409
+        App\Catalog\Exception\CatalogEntryNotFound: 404
+        App\Catalog\Exception\CodeAlreadyUsed: 409
         DomainException: 422
         InvalidArgumentException: 400

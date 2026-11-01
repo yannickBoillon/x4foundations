@@ -268,7 +268,7 @@ Règles reprises de `User` :
 - **Exceptions métier** déclarées dans `exception_to_status` d'API Platform
   (404, 409…).
 - **Sécurité dans les opérations** `#[ApiResource]`, mais avec des permissions
-  (`is_granted('PERM_SHIP_MODEL_WRITE')`) au lieu de rôles.
+  (`is_granted('ROLE_PERMISSION_SHIP_MODEL_WRITE')`) au lieu de rôles.
 
 Configuration à ajouter : mapping Doctrine `Catalog` dans
 `config/packages/doctrine.yaml` et chemin `src/Catalog/Api/Resource` dans

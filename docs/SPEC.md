@@ -202,20 +202,26 @@ vaisseaux » ou « modifier les équipements ».
   ```yaml
   role_hierarchy:
       ROLE_USER:
-          - PERM_SHIP_MODEL_READ
-          - PERM_EQUIPMENT_READ
+          - ROLE_PERMISSION_SHIP_MODEL_READ
+          - ROLE_PERMISSION_EQUIPMENT_READ
       ROLE_CATALOG_MANAGER:
           - ROLE_USER
-          - PERM_SHIP_MODEL_WRITE
-          - PERM_EQUIPMENT_WRITE
-          - PERM_PRICE_WRITE
+          - ROLE_PERMISSION_SHIP_MODEL_WRITE
+          - ROLE_PERMISSION_EQUIPMENT_WRITE
+          - ROLE_PERMISSION_PRICE_WRITE
       ROLE_ADMIN:
           - ROLE_CATALOG_MANAGER
   ```
 
 - Le code ne vérifie jamais un rôle, **uniquement des permissions**
-  (`is_granted('PERM_SHIP_MODEL_WRITE')`). Les rôles ne servent qu'à les
+  (`is_granted('ROLE_PERMISSION_SHIP_MODEL_WRITE')`). Les rôles ne servent qu'à les
   regrouper.
+- **Nommage : `ROLE_PERMISSION_<RESSOURCE>_<ACTION>`.** Le préfixe `ROLE_` est
+  imposé par le `RoleVoter` de Symfony, qui ne traite que les attributs
+  commençant par `ROLE_` : aucun voter spécifique n'est nécessaire. Le segment
+  `PERMISSION_` distingue les permissions des vrais rôles.
+- Seuls les vrais rôles (énumération `Role`) peuvent être attribués à un
+  utilisateur ; une permission ne s'obtient qu'à travers un rôle.
 - Conséquence : la liste des rôles et de leurs permissions est fixée dans la
   configuration ; la modifier demande un déploiement.
 
