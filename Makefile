@@ -40,7 +40,18 @@ migration: ## Génère une migration Doctrine
 migrate: ## Exécute les migrations
 	$(CONSOLE) doctrine:migrations:migrate --no-interaction
 
+phpstan: ## Analyse statique (PHPStan, niveau max)
+	$(PHP) vendor/bin/phpstan analyse
+
+cs: ## Vérifie le style (PHP-CS-Fixer)
+	$(PHP) vendor/bin/php-cs-fixer check --diff
+
+cs-fix: ## Corrige le style (PHP-CS-Fixer)
+	$(PHP) vendor/bin/php-cs-fixer fix
+
+qa: phpstan cs ## PHPStan + vérification du style
+
 health: ## Vérifie PostgreSQL, Elasticsearch et RabbitMQ
 	@curl -s http://localhost:$${HTTP_PORT:-8080}/health; echo
 
-.PHONY: help build up down logs sh console composer npm migration migrate health
+.PHONY: help build up down logs sh console composer npm migration migrate phpstan cs cs-fix qa health
