@@ -10,8 +10,6 @@ services:
   php:
     build:
       context: ./docker/php
-      args:
-        SYMFONY_VERSION: ${SYMFONY_VERSION:-7.4.*}
     # Tourne avec ton UID/GID : les fichiers générés t'appartiennent sur l'hôte
     user: "${UID:-1000}:${GID:-1000}"
     environment: *app-env
@@ -60,8 +58,6 @@ services:
   worker:
     build:
       context: ./docker/php
-      args:
-        SYMFONY_VERSION: ${SYMFONY_VERSION:-7.4.*}
     user: "${UID:-1000}:${GID:-1000}"
     command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "-vv"]
     environment: *app-env

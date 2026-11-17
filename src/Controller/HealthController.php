@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use Doctrine\DBAL\Connection;
 use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Response\Elasticsearch;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -30,7 +31,8 @@ final class HealthController extends AbstractController
         $checks = [
             'postgresql' => $this->check(fn () => $this->connection->executeQuery('SELECT 1')->fetchOne()),
             'elasticsearch' => $this->check(function (): void {
-                if (!$this->elasticsearch->ping()->asBool()) {
+                $response = $this->elasticsearch->ping();
+                if (!$response instanceof Elasticsearch || !$response->asBool()) {
                     throw new \RuntimeException('ping failed');
                 }
             }),

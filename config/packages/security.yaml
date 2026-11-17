@@ -9,10 +9,16 @@ security:
                 class: App\User\Entity\User
 
     # ROLE_ADMIN > ROLE_FLEET_COMMANDER > ROLE_PILOT > ROLE_USER
+    # Chaque rôle regroupe aussi des permissions (ROLE_PERMISSION_*) : le code vérifie des
+    # permissions, jamais des rôles. Le préfixe ROLE_ les fait gérer nativement par le RoleVoter.
     role_hierarchy:
+        ROLE_USER:
+            - ROLE_PERMISSION_RACE_READ
         ROLE_PILOT: ROLE_USER
         ROLE_FLEET_COMMANDER: ROLE_PILOT
-        ROLE_ADMIN: ROLE_FLEET_COMMANDER
+        ROLE_ADMIN:
+            - ROLE_FLEET_COMMANDER
+            - ROLE_PERMISSION_RACE_WRITE
 
     firewalls:
         dev:

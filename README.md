@@ -19,41 +19,59 @@ API Symfony de gestion de flottes de vaisseaux.
 
 ```bash
 make up          # ou : UID=$(id -u) GID=$(id -g) docker compose up -d --build
-make logs s=php  # suivre la création du projet
 make health      # {"status":"ok", ...}
 ```
 
-Au **premier lancement**, le container `php` détecte l'absence de `composer.json` et :
-
-1. crée le squelette Symfony (`symfony/skeleton`, version `SYMFONY_VERSION`, 7.4 LTS par défaut) ;
-2. installe Doctrine ORM + migrations, Messenger + transport AMQP, Serializer, Validator,
-   le client officiel Elasticsearch et MakerBundle (dev).
-
-Les lancements suivants font simplement `composer install` si `vendor/` manque, puis
-exécutent les migrations en attente.
-
-Le container `frontend` fait de même : si `frontend/package.json` est absent, il génère une
-application React + TypeScript avec Vite (`npm create vite`, template `react-ts`), installe les
-dépendances puis lance le serveur de dev (hot reload). L'URL de l'API est exposée au code via
+Au démarrage, le container `php` lance `composer install` si `vendor/` manque, puis exécute
+les migrations en attente. Le container `frontend` lance `npm install` si `node_modules/`
+manque, puis le serveur de dev Vite (hot reload). L'URL de l'API est exposée au front via
 `import.meta.env.VITE_API_URL`.
 
-## Configuration déjà en place
+Au premier lancement, générer les clés JWT (non versionnées) :
 
-- `config/packages/messenger.yaml` : transport `async` sur RabbitMQ, échecs stockés en base (`failed`).
-- `config/packages/elasticsearch.yaml` : service `Elastic\Elasticsearch\Client` injectable par autowiring.
-- `src/Controller/HealthController.php` : `GET /health` teste les trois services.
+```bash
+make console c="lexik:jwt:generate-keypair"
+```
 
-Les ports, identifiants et la version de Symfony se surchargent via variables d'environnement
-(`HTTP_PORT`, `POSTGRES_PORT`, `POSTGRES_PASSWORD`, `SYMFONY_VERSION`…).
+Les ports et identifiants se surchargent via variables d'environnement (`HTTP_PORT`,
+`POSTGRES_PORT`, `POSTGRES_PASSWORD`…).
+
+## Organisation du code
+
+Un module par domaine, en DDD simplifié (voir [docs/MODEL.md](docs/MODEL.md)) :
+
+```
+src/<Module>/
+├── Entity/       entités Doctrine, exposées par API Platform (#[ApiResource])
+├── Repository/
+├── Service/      cas d'usage
+├── Exception/    exceptions métier → codes HTTP (config/packages/api_platform.yaml)
+├── Api/Input/    DTO d'entrée validés
+├── Api/State/    processors (écriture)
+└── Console/
+```
+
+- `src/User/` : comptes, inscription, rôles.
+- `src/Catalog/` : référentiel du jeu (voir [docs/SPEC.md](docs/SPEC.md)) — races pour l'instant.
+- Droits : permissions `ROLE_PERMISSION_*` regroupées par rôle dans `role_hierarchy`
+  (`config/packages/security.yaml`).
+- `GET /health` teste PostgreSQL, Elasticsearch et RabbitMQ ; documentation de l'API sur
+  http://localhost:8080/api/docs.
 
 ## Commandes utiles
 
 ```bash
-make console c="make:entity Ship"
+make console c="debug:router"
 make migration && make migrate
-make composer c="require api"   # API Platform, si besoin
 make sh
 make npm c="install axios"      # npm dans le container frontend
+```
+
+## Qualité
+
+```bash
+make qa          # PHPStan (niveau max) + vérification du style
+make cs-fix      # corrige le style (PHP-CS-Fixer, règles @Symfony)
 ```
 
 ## Comptes de test

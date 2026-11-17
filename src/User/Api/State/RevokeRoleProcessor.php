@@ -6,6 +6,7 @@ namespace App\User\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use App\Api\UriVariable;
 use App\User\Entity\Role;
 use App\User\Repository\UserRepository;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -21,10 +22,10 @@ final readonly class RevokeRoleProcessor implements ProcessorInterface
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): null
     {
-        $role = Role::tryFrom(strtoupper((string) $uriVariables['role']))
+        $role = Role::tryFrom(strtoupper(UriVariable::string($uriVariables, 'role')))
             ?? throw new UnprocessableEntityHttpException(\sprintf('Rôle inconnu. Rôles possibles : %s', implode(', ', Role::values())));
 
-        $user = $this->users->get((string) $uriVariables['id']);
+        $user = $this->users->get(UriVariable::string($uriVariables, 'id'));
         $user->revokeRole($role);
         $this->users->save($user);
 

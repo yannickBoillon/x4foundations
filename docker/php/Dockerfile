@@ -12,9 +12,7 @@ RUN apk add --no-cache git unzip \
 COPY --chmod=644 conf.d/app.ini $PHP_INI_DIR/conf.d/zz-app.ini
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 
-ARG SYMFONY_VERSION=7.4.*
-ENV SYMFONY_VERSION=${SYMFONY_VERSION} \
-    HOME=/tmp \
+ENV HOME=/tmp \
     COMPOSER_HOME=/tmp/composer
 
 WORKDIR /app

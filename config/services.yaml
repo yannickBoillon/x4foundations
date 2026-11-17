@@ -19,12 +19,11 @@ services:
     App\:
         resource: '../src/'
         exclude:
-            - '../src/DependencyInjection/'
             - '../src/Kernel.php'
-            # Entités, exceptions et DTO : ce ne sont pas des services
+            # Entités, exceptions et DTO d'entrée : ce ne sont pas des services
             - '../src/*/Entity/'
             - '../src/*/Exception/'
-            - '../src/*/Api/{Resource,Input}/'
+            - '../src/*/Api/Input/'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

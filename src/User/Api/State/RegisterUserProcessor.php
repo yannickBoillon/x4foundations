@@ -7,11 +7,11 @@ namespace App\User\Api\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\User\Api\Input\RegisterUserInput;
-use App\User\Api\Resource\UserResource;
+use App\User\Entity\User;
 use App\User\Service\UserRegistration;
 
 /**
- * @implements ProcessorInterface<RegisterUserInput, UserResource>
+ * @implements ProcessorInterface<RegisterUserInput, User>
  */
 final readonly class RegisterUserProcessor implements ProcessorInterface
 {
@@ -19,10 +19,8 @@ final readonly class RegisterUserProcessor implements ProcessorInterface
     {
     }
 
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): UserResource
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): User
     {
-        \assert($data instanceof RegisterUserInput);
-
-        return UserResource::fromEntity($this->registration->register($data->email, $data->plainPassword));
+        return $this->registration->register($data->email, $data->plainPassword);
     }
 }
